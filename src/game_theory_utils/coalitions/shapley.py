@@ -4,7 +4,6 @@ from itertools import chain, combinations, permutations
 from collections import defaultdict
 from math import factorial
 
-players = set()
 
 def get_shapley_values(vals):
     """Given a dictionary of values of subsets of players, calculate the shapely value for
@@ -13,19 +12,17 @@ def get_shapley_values(vals):
        players. The code will fill in values for subsets not given according to the following rules:
        For any subset not specified, the value is the highest valued subset which is specified.
        If a value for a solo player is not given assign zero."""
-    global players
-    vals = _filled_vals(vals)
+    vals, players = _filled_vals(vals)
     shapley = defaultdict(float)
 
     for combo in permutations(players):
-        sofar = 0
         for ii, elm in enumerate(combo):
             player = combo[ii]
             if ii == 0:
                 shapley[player] += vals[frozenset([player])]
             else:
-                prev_players = combo[0:ii -1]
-                cur_players = combo[0:ii]
+                prev_players = combo[0:ii]
+                cur_players = combo[0:ii + 1]
                 shapley[player] += vals[frozenset(cur_players)] - vals[frozenset(prev_players)]
 
     div = factorial(len(players))
@@ -45,7 +42,6 @@ def _frozen_vals(vals):
 
 def _filled_vals(vals):
     """Given a dictionary of subset values, fill in any missing values according to the get_shapely_value rules"""
-    global players
     vals = _frozen_vals(vals)
     players = set()
     for key in vals.keys():
@@ -70,7 +66,8 @@ def _filled_vals(vals):
                 elif new > max_:
                     max_ = new
             fv[frozen] = max_
-    return fv
+    return fv, players
+
 
 def powerset(iterable):
     """From itertools documentation"""
