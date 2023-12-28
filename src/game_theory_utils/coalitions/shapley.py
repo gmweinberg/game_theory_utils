@@ -9,10 +9,11 @@ class Shapley:
         self.players = set()
         self.shapely_vals = None
         if vals:
-            self.filled_vals = self.get_filled_vals()
+            self.filled_vals = self.get_filled_vals(vals)
+            self.compute_shapley_vals()
 
-    def get_filled_vals(vals):
-        """Given a dictionary of subset values, 
+    def get_filled_vals(self, vals):
+        """Given a dictionary of subset values,
             fill in any missing values according to the get_shapely_value rules.
             Fills in players as a side effect."""
         vals = _frozen_vals(vals)
@@ -45,6 +46,7 @@ class Shapley:
     def compute_shapley_vals(self):
         shapley = defaultdict(float)
         players = self.players
+        vals = self.filled_vals
 
         for combo in permutations(players):
             for ii, elm in enumerate(combo):
@@ -60,12 +62,12 @@ class Shapley:
         for player in shapley.keys():
             shapley[player] = shapley[player]/div
 
-        self.shapley_vals = shapley 
+        self.shapley_vals = shapley
 
 
-    def get_shapley_vals(self):
+    def get_shapley_values(self):
         return self.shapley_vals
-        
+
 
 
 def get_shapley_values(vals):
@@ -153,7 +155,7 @@ def voting_shapley(vals):
             types[newtype].append(key)
             newtype += 1
 
-            
+
     pass
 
 
