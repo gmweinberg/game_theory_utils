@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 
 from itertools import chain, combinations, permutations
+from game_theory_utils.util import powerset, distinct_permutations, sequence_counts
 from collections import defaultdict
 from math import factorial
 
 class Shapley:
     def __init__(self, vals=None):
+        self.coalition_valuation = None # function giving the value of a coalition
+        self.player_type= None # dict giving counts of players of each type
         self.players = set()
         self.shapely_vals = None
         if vals:
@@ -64,10 +67,48 @@ class Shapley:
 
         self.shapley_vals = shapley
 
+    def set_player_types(self,  player_types):
+        """Set dictionary fiving counts of player types."""
+        self.player_types = player_types
+
+    def set_coalition_valuation(self, fun):
+        """Set the valuation function for coalations. The function should take a dict
+           of type:count as an input and return a float."""
+
+        self.coalition_valuation = fun
+
+    def set_voting_powers(self, player_types, type_strength):
+        """A specific coalation value structure such that a coalition wth more than
+           half the total voting strength has a coaltion value of 1, and less than or equal
+           has a value of zero."""
+        self.set_player_types(player_types)
+        total = sum([player_types[player] * type_strength[player] for player in player_types])
+        crit = total / 2
+        strength = lambda player_counts: sum([player_counts[player] * type_strength[player] for player in player_counts])
+        fun = lambda player_counts: int(strength(player_counts) > crit)
+        self.set_coalition_valuation(fun)
+
+    def  compute_shapley_vals2(self):
+        shapley = defaultdict(float)
+        perms = 0.0
+        for combo in distinct_permutations(self.player_types):
+            perms += 1.0
+            for ii, player in enumerate(combo):
+                if ii == 0:
+                    oldval = 0
+                    continue
+                counts = sequence_counts(combo[0:ii])
+                newval = self.coalition_valuation(counts)
+                shapley[player] += newval - oldval
+                oldval = newval
+        for player in shapley.keys():
+            shapley[player] = shapley[player]/(perms * self.player_types[player])
+
+        self.shapley_vals = dict(shapley)
+
 
     def get_shapley_values(self):
         return self.shapley_vals
-
 
 
 def get_shapley_values(vals):
@@ -133,34 +174,3 @@ def _filled_vals(vals):
             fv[frozen] = max_
     return fv, players
 
-def voting_shapley(vals):
-    """Find the shapely power for the simplified case where all players have a voting power and majority wins.
-       Vals is a dict identifier: votes"""
-    # For this function to be useful the voters have to be grouped into types with the same voting power.
-    # we will identify the types just with ints
-    types = defaultdict(list) # key = type, val = original players of that type
-    powers = dict() # key = type, val = power of that type
-    ipower = dict() # inverse of power. key = power, val = type
-    newtype = 0
-    total = 0 # total voting power
-    for key in vals.keys():
-        power = val[key]
-        total += power
-        if power in ipower:
-            type_ = ipower[power]
-            types[type_].append(key)
-        else:
-            powers[newtype] = power
-            ipower[power] = newtype
-            types[newtype].append(key)
-            newtype += 1
-
-
-    pass
-
-
-def powerset(iterable):
-    """From itertools documentation"""
-    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
-    s = list(iterable)
-    return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))

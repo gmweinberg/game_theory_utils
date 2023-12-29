@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 """Utility functions for the game theory utils."""
 
+from collections import defaultdict
 from itertools import chain, combinations, permutations, repeat
 
-__all__ = ['powerset', 'distinct_permutations']
+__all__ = ['powerset', 'distinct_permutations', 'sequence_counts']
 
 def powerset(iterable):
     """From itertools documentation"""
@@ -41,8 +42,9 @@ def _assign_distinct(assigned, positions, counts):
     else:
         yield assigned
 
-if __name__ == '__main__':
-    counts = {0:5, 1:1}
-    for aperm in  distinct_permutations(counts):
-        print(aperm)
-
+def sequence_counts(iterable):
+    """Get a dict indicating the number of times each element in the sequence occurs."""
+    counts = defaultdict(int)
+    for elm in iterable:
+        counts[elm] += 1
+    return dict(counts)
