@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 from itertools import chain, combinations, permutations
-from game_theory_utils.util import powerset, distinct_permutations, sequence_counts
 from collections import defaultdict
 from math import factorial
+import random
+from game_theory_utils.util import (powerset, distinct_permutations, sequence_counts, sequence_from_types)
 
 class Shapley:
     def __init__(self, vals=None):
@@ -93,6 +94,25 @@ class Shapley:
         perms = 0.0
         for combo in distinct_permutations(self.player_types):
             perms += 1.0
+            for ii, player in enumerate(combo):
+                if ii == 0:
+                    oldval = 0
+                    continue
+                counts = sequence_counts(combo[0:ii])
+                newval = self.coalition_valuation(counts)
+                shapley[player] += newval - oldval
+                oldval = newval
+        for player in shapley.keys():
+            shapley[player] = shapley[player]/(perms * self.player_types[player])
+
+        self.shapley_vals = dict(shapley)
+
+    def simulate_shapley_values(self, perms):
+        """Get approximate shapley values by looking at random permutations."""
+        shapley = defaultdict(float)
+        combo = sequence_from_types(self.player_types)
+        for jj in range(perms):
+            random.shuffle(combo)
             for ii, player in enumerate(combo):
                 if ii == 0:
                     oldval = 0

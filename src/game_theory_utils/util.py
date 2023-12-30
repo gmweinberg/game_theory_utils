@@ -4,7 +4,7 @@
 from collections import defaultdict
 from itertools import chain, combinations, permutations, repeat
 
-__all__ = ['powerset', 'distinct_permutations', 'sequence_counts']
+__all__ = ['powerset', 'distinct_permutations', 'sequence_counts', 'sequence_from_types']
 
 def powerset(iterable):
     """From itertools documentation"""
@@ -48,3 +48,10 @@ def sequence_counts(iterable):
     for elm in iterable:
         counts[elm] += 1
     return dict(counts)
+
+def sequence_from_types(type_counts):
+    """Given a type_counts dictionary return a list with counts of each type."""
+    result = []
+    for key in type_counts.keys():
+        result.extend([key] * type_counts[key])
+    return result
