@@ -5,7 +5,7 @@ from collections import defaultdict
 from itertools import chain, combinations, permutations, repeat
 
 __all__ = ['powerset', 'distinct_permutations', 'sequence_counts', 'sequence_from_types',
-           'one_to_max']
+           'subtype_coalitions', 'one_to_max']
 
 def powerset(iterable):
     """From itertools documentation"""
@@ -60,9 +60,11 @@ def sequence_from_types(type_counts):
 def subtype_coalitions(type_counts):
     """Given a dictionary of types and counts, generate tuples with 0 up to n of each type"""
     keys = sorted([key for key in type_counts])
-    for n in range(1, len(keys)):
+    for n in range(1, len(keys) + 1):
         for combo in combinations(keys, n):
-            pass
+            mytuple = tuple([(pt, type_counts[pt]) for pt in combo])
+            for coal in one_to_max(mytuple):
+                yield coal
 
 def one_to_max(counts):
     """Given a list of tuples, generate tuples with the first element and one to max of the second

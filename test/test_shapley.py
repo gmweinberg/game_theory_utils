@@ -56,7 +56,10 @@ if __name__ == '__main__':
 # Different types with the same strength should have the same value, 1/ total nmber of players.
 
 # ./test_shapley.py --voting --types "{0:3, 1:2, 2:2}" --strength "{0:1, 1:1, 2:2}"
-# ./test_shapley.py --ungrouped --vals "{(0,1):1, (0.2):1, (1,2):1}"
+# ./test_shapley.py --ungrouped --vals "{(0,1):1, (0,2):1, (1,2):1}"
 # ./test_shapley.py --grouped --types "{0:3}" --vals "{((0,2):1)}"
-# ./test_shapley.py --grouped --types "{0:3, 1:2}" --vals "{((0,3):1, (0,2)}"
+# ./test_shapley.py --grouped --types "{0:3, 1:2}" --vals "{((0,3),):1, ((0,2),(1,1)):1, ((0,1),(2,1)):1}"
+# glove game gives 1/6, 1/6, 2/3
 
+# ./test_shapley.py --ungrouped --vals "{(0,2):1, (1,2):1}"
+# ./test_shapley.py --grouped --types "{0:2, 1:1}" --vals "{((0,1),(1,1)):1}"

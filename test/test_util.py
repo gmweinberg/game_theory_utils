@@ -17,6 +17,8 @@ if __name__ == '__main__':
                         dest='sequence_counts')
     parser.add_argument('--one-to-max', action='store_true', help="show one-to-max of elms",
                         dest='one_to_max')
+    parser.add_argument('--subtype-coalitions', action='store_true', help="show subtype_coalitions of vals",
+                        dest='subtype_coalitions')
     parser.add_argument('--vals', help='vals dictionary')
     parser.add_argument('--elms', help='elms sequence')
     args = parser.parse_args()
@@ -44,6 +46,10 @@ if __name__ == '__main__':
         for aresult in one_to_max(elms):
             print(aresult)
 
+    if args.subtype_coalitions:
+        for aresult in subtype_coalitions(vals):
+            print(aresult)
+
 
 #./test_util.py --distinct --vals "{0:5, 1:1}" # should give 5 distinct permutations
 #./test_util.py --distinct --vals "{0:3, 1:2}" # should give 10 distinct permutations
@@ -51,7 +57,9 @@ if __name__ == '__main__':
 
 #./test_util.py --powerset --elms "(1, 2, 3, 4)"
 
-# ./test_util.py --sequence-counts "(0,1,2,3,3,3,0,0)"
+# ./test_util.py --sequence-counts --elms "(0,1,2,3,3,3,0,0)"
 
-# ./test_util.py --one-to-max "((0,3), (1,2))"
+# ./test_util.py --one-to-max --elms "((0,3), (1,2))"
+
+# ./test_util.py  --subtype-coalitions --vals "{0:3, 1:2}"
 

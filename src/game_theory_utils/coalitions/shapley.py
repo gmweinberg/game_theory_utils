@@ -5,7 +5,8 @@ from collections import defaultdict
 from math import factorial
 import random
 from copy import deepcopy
-from game_theory_utils.util import (powerset, distinct_permutations, sequence_counts, sequence_from_types)
+from game_theory_utils.util import (powerset, distinct_permutations, sequence_counts, sequence_from_types,
+                                    subtype_coalitions)
 
 class Shapley:
     def __init__(self, vals=None):
@@ -127,8 +128,8 @@ class Shapley:
         for player_type in player_types:
             for count in range(1, player_types[player_type] + 1):
                 all_player_counts.add((player_type, count))
-        for elm in powerset(all_player_counts):
-            nkey = tuple(sorted(list(elm), key=lambda x:x[0]))
+        for nkey in subtype_coalitions(player_types):
+            #nkey = tuple(sorted(list(elm), key=lambda x:x[0]))
             lol = 'nope'
             if nkey not in vals:
                 max_ = 0
@@ -136,7 +137,7 @@ class Shapley:
                 # and all coalitions with one fewer of each member type.
                 # I think the powerset ordering means we only have to check one member removed at a time,
                 # because we will already have checked an entry with more than one entry removed
-                ed = {ptc[0]:ptc[1] for ptc in elm} # elm dict
+                ed = {ptc[0]:ptc[1] for ptc in nkey} # elm dict
                 for pt in ed:
                     nd = dict(ed)
                     if ed[pt] > 1:
