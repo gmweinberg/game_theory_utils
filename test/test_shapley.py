@@ -9,37 +9,54 @@ if __name__ == '__main__':
     from ast import literal_eval
     parser = ArgumentParser()
     parser.add_argument('--verbose', action='store_true')
-    parser.add_argument('--voting', action='store_true')
+    parser.add_argument('--voting', action='store_true', help="test voting")
+    parser.add_argument('--ungrouped', action='store_true', help="test set_ungrouped_coalition_values")
+    parser.add_argument('--grouped', action='store_true', help="test set_grouped_coalition_values")
     parser.add_argument('--types', help='player types dictionary')
     parser.add_argument('--strengths', help='player strengths dictionary')
     parser.add_argument('--vals', help='valuations_dict')
     args = parser.parse_args()
+    verbose = args.verbose
 
-    vals = {(0,1):1, (0,2):1, (1,2):1}
-    if args.vals:
-        vals = literal_eval(args.vals)
-        shapley = Shapley(vals)
-        sha = shapley.get_shapley_values()
-        print(sha)
+    shapley = Shapley()
+    shapley.verbose = verbose
 
     if args.types:
         player_types = literal_eval(args.types)
     if args.strengths:
         strengths = literal_eval(args.strengths)
+    if args.vals:
+        vals = literal_eval(args.vals)
 
     if args.voting:
-        shapley = Shapley()
         shapley.set_voting_powers(player_types=player_types, type_strength=strengths)
         shapley.compute_shapley_vals2()
         print('computed values',  shapley.get_shapley_values())
         shapley.simulate_shapley_values(100000)
         print('simulated values',  shapley.get_shapley_values())
 
+    if args.ungrouped:
+        shapley.set_ungrouped_coalition_values(vals)
+        shapley.compute_shapley_vals2()
+        print('computed values',  shapley.get_shapley_values())
+
+    if args.grouped:
+        shapley.set_grouped_coalition_values(coalition_values = vals, player_types=player_types)
+        shapley.compute_shapley_vals2()
+        print('computed values',  shapley.get_shapley_values())
+
+# Simulated vals should be almost the same as computed vals as long as number of iterations is large.
+# Computed vals computed different ways must give the same answer
 
 #./test_shapley.py --vals "{(0,1):1, (0,2):1, (1,2):1}" # majority voting gives 1/3, 1/3, 1/3
 #./test_shapley.py --vals "{(1,3):1, (2,3):1}" # gloves game should give 1/6, 1/6, 2/3 Maschler p 807
 
 
 # test voting. 
-# Different types with the same strength should have the same value
+# Different types with the same strength should have the same value, 1/ total nmber of players.
+
 # ./test_shapley.py --voting --types "{0:3, 1:2, 2:2}" --strength "{0:1, 1:1, 2:2}"
+# ./test_shapley.py --ungrouped --vals "{(0,1):1, (0.2):1, (1,2):1}"
+# ./test_shapley.py --grouped --types "{0:3}" --vals "{((0,2):1)}"
+# ./test_shapley.py --grouped --types "{0:3, 1:2}" --vals "{((0,3):1, (0,2)}"
+
