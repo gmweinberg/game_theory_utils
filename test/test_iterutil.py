@@ -4,7 +4,7 @@
 import sys
 sys.path.append('../src')
 
-from game_theory_utils.util import *
+from game_theory_utils.util.iterutil import *
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
@@ -17,6 +17,8 @@ if __name__ == '__main__':
                         dest='sequence_counts')
     parser.add_argument('--one-to-max', action='store_true', help="show one-to-max of elms",
                         dest='one_to_max')
+    parser.add_argument('--one-less', action='store_true', help="show one-less of elms",
+                        dest='one_less')
     parser.add_argument('--subtype-coalitions', action='store_true', help="show subtype_coalitions of vals",
                         dest='subtype_coalitions')
     parser.add_argument('--vals', help='vals dictionary')
@@ -46,20 +48,26 @@ if __name__ == '__main__':
         for aresult in one_to_max(elms):
             print(aresult)
 
+    if args.one_less:
+        for aresult in one_less(elms):
+            print(aresult)
+
     if args.subtype_coalitions:
         for aresult in subtype_coalitions(vals):
             print(aresult)
 
 
-#./test_util.py --distinct --vals "{0:5, 1:1}" # should give 5 distinct permutations
-#./test_util.py --distinct --vals "{0:3, 1:2}" # should give 10 distinct permutations
-#./test_util.py --distinct --vals "{0:2, 1:2, 2:2}" # should give 90 distinct permutations
+#./test_iterutil.py --distinct --vals "{0:5, 1:1}" # should give 5 distinct permutations
+#./test_iterutil.py --distinct --vals "{0:3, 1:2}" # should give 10 distinct permutations
+#./test_iterutil.py --distinct --vals "{0:2, 1:2, 2:2}" # should give 90 distinct permutations
 
-#./test_util.py --powerset --elms "(1, 2, 3, 4)"
+#./test_iterutil.py --powerset --elms "(1, 2, 3, 4)"
 
-# ./test_util.py --sequence-counts --elms "(0,1,2,3,3,3,0,0)"
+# ./test_iterutil.py --sequence-counts --elms "(0,1,2,3,3,3,0,0)"
 
-# ./test_util.py --one-to-max --elms "((0,3), (1,2))"
+# ./test_iterutil.py --one-to-max --elms "((0,3), (1,2))"
 
-# ./test_util.py  --subtype-coalitions --vals "{0:3, 1:2}"
+# ./test_iterutil.py --one-less --elms "((0, 3), (1, 2), (2, 2))"
+
+# ./test_iterutil.py  --subtype-coalitions --vals "{0:3, 1:2}"
 

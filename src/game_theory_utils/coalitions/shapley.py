@@ -5,71 +5,15 @@ from collections import defaultdict
 from math import factorial
 import random
 from copy import deepcopy
-from game_theory_utils.util import (powerset, distinct_permutations, sequence_counts, sequence_from_types,
+from game_theory_utils.util.iterutil import (powerset, distinct_permutations, sequence_counts, sequence_from_types,
                                     subtype_coalitions)
 
 class Shapley:
-    def __init__(self, vals=None):
+    def __init__(self):
         self.coalition_valuation = None # function giving the value of a coalition
         self.player_type= None # dict giving counts of players of each type
-        self.players = set()
         self.shapely_vals = None
         self.verbose = False
-        if vals:
-            self.filled_vals = self.get_filled_vals(vals)
-            self.compute_shapley_vals()
-
-    def get_filled_vals(self, vals):
-        """Given a dictionary of subset values,
-            fill in any missing values according to the get_shapely_value rules.
-            Fills in players as a side effect."""
-        vals = _frozen_vals(vals)
-        players = set()
-        for key in vals.keys():
-            for elm in key:
-                 players.add(elm)
-        fv = {}
-        for elm in powerset(players):
-            frozen = frozenset(elm)
-            if len(elm) == 0:
-                fv[frozen] = 0
-            elif frozen in vals:
-                fv[frozen] = vals[frozen]
-            elif len(frozen) == 1:
-                fv[frozen] = 0
-            else:
-                max_ = None
-                s = list(frozen)
-                for shorter in combinations(s, len(frozen) - 1):
-                    new = fv[frozenset(shorter)]
-                    if max_ is None:
-                        max_ = new
-                    elif new > max_:
-                        max_ = new
-                fv[frozen] = max_
-        self.players = players
-        return fv
-
-    def compute_shapley_vals(self):
-        shapley = defaultdict(float)
-        players = self.players
-        vals = self.filled_vals
-
-        for combo in permutations(players):
-            for ii, elm in enumerate(combo):
-                player = combo[ii]
-                if ii == 0:
-                    shapley[player] += vals[frozenset([player])]
-                else:
-                    prev_players = combo[0:ii]
-                    cur_players = combo[0:ii + 1]
-                    shapley[player] += vals[frozenset(cur_players)] - vals[frozenset(prev_players)]
-
-        div = factorial(len(players))
-        for player in shapley.keys():
-            shapley[player] = shapley[player]/div
-
-        self.shapley_vals = shapley
 
     def set_player_types(self,  player_types):
         """Set dictionary giving counts of player types."""
@@ -166,7 +110,7 @@ class Shapley:
         fun = lambda player_counts: int(strength(player_counts) > crit)
         self.set_coalition_valuation(fun)
 
-    def  compute_shapley_vals2(self):
+    def  compute_shapley_values(self):
         shapley = defaultdict(float)
         perms = 0.0
         for combo in distinct_permutations(self.player_types):
@@ -206,68 +150,3 @@ class Shapley:
 
     def get_shapley_values(self):
         return self.shapley_vals
-
-
-def get_shapley_values(vals):
-    """Given a dictionary of values of subsets of players, calculate the shapely value for
-       each player. The key of vals is a (frozen) set or tuple of player identifiers,
-       the value is the value for that subset of
-       players. The code will fill in values for subsets not given according to the following rules:
-       For any subset not specified, the value is the highest valued subset which is specified.
-       If a value for a solo player is not given assign zero."""
-    vals, players = _filled_vals(vals)
-    shapley = defaultdict(float)
-
-    for combo in permutations(players):
-        for ii, elm in enumerate(combo):
-            player = combo[ii]
-            if ii == 0:
-                shapley[player] += vals[frozenset([player])]
-            else:
-                prev_players = combo[0:ii]
-                cur_players = combo[0:ii + 1]
-                shapley[player] += vals[frozenset(cur_players)] - vals[frozenset(prev_players)]
-
-    div = factorial(len(players))
-    for player in shapley.keys():
-        shapley[player] = shapley[player]/div
-
-    print('okey doke')
-    return shapley
-
-def _frozen_vals(vals):
-    """Transform keys from tuples to frozensets"""
-    frozen = {}
-    for key in vals.keys():
-        frozen[frozenset(key)] = vals[key]
-    return frozen
-
-
-def _filled_vals(vals):
-    """Given a dictionary of subset values, fill in any missing values according to the get_shapely_value rules"""
-    vals = _frozen_vals(vals)
-    players = set()
-    for key in vals.keys():
-        for elm in key:
-             players.add(elm)
-    fv = {}
-    for elm in powerset(players):
-        frozen = frozenset(elm)
-        if len(elm) == 0:
-            fv[frozen] = 0
-        elif frozen in vals:
-            fv[frozen] = vals[frozen]
-        elif len(frozen) == 1:
-            fv[frozen] = 0
-        else:
-            max_ = None
-            s = list(frozen)
-            for shorter in combinations(s, len(frozen) - 1):
-                new = fv[frozenset(shorter)]
-                if max_ is None:
-                    max_ = new
-                elif new > max_:
-                    max_ = new
-            fv[frozen] = max_
-    return fv, players
-

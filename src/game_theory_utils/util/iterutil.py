@@ -1,11 +1,12 @@
 #!/usr/bin/env python
-"""Utility functions for the game theory utils."""
+"""Utility functions for iterations."""
 
 from collections import defaultdict
+from copy import deepcopy
 from itertools import chain, combinations, permutations, repeat
 
 __all__ = ['powerset', 'distinct_permutations', 'sequence_counts', 'sequence_from_types',
-           'subtype_coalitions', 'one_to_max']
+           'subtype_coalitions', 'one_to_max', 'one_less']
 
 def powerset(iterable):
     """From itertools documentation"""
@@ -90,7 +91,14 @@ def _one_to_max_next(counts, pos):
         pos[iii] = 1
     return pos
 
-
-
-
+def one_less(coal):
+    """Given a types count tuple/list, yield tuple with one less of each member"""
+    coal = [[elm[0], elm[1]] for elm in coal]
+    for ii, elm in enumerate(coal):
+        coal2 = deepcopy(coal)
+        if elm[1] == 1:
+            del coal2[ii]
+        else:
+            coal2[ii][1] -= 1
+        yield tuple([(elm[0], elm[1]) for elm in coal2])
 
