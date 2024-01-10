@@ -7,7 +7,7 @@
    tuples when I want to use it as dictionary keys.
    For the tuple I may or may not want to include an element for zero of a type."""
 
-__all__ = ('tuple_from_dict', 'dict_from_tuple', 'list2', 'tuple2', 'insert_zeros', 'remove_zeros')
+__all__ = ('tuple_from_dict', 'dict_from_tuple', 'list2', 'tuple2', 'insert_zeros', 'remove_zeros', 'get_type_count')
 
 def tuple_from_dict(dict):
     """Create a tuple of tuples from a dictionary"""
@@ -34,6 +34,13 @@ def insert_zeros(counts_tuple, keys):
 def remove_zeros(counts_tuple):
     ml = [elm for elm in counts_tuple if elm[1] > 0]
     return tuple(ml)
+
+def get_type_count(counts_tuple, type_):
+    """Get the count of a particular type from a counts_tuple"""
+    for elm in counts_tuple:
+        if elm[0] == type_:
+            return elm[1]
+    return 0
 
 
 

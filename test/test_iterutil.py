@@ -17,6 +17,8 @@ if __name__ == '__main__':
                         dest='sequence_counts')
     parser.add_argument('--one-to-max', action='store_true', help="show one-to-max of elms",
                         dest='one_to_max')
+    parser.add_argument('--zero-to-max', action='store_true', help="show zero-to-max of elms",
+                        dest='zero_to_max')
     parser.add_argument('--one-less', action='store_true', help="show one-less of elms",
                         dest='one_less')
     parser.add_argument('--subtype-coalitions', action='store_true', help="show subtype_coalitions of vals",
@@ -48,6 +50,10 @@ if __name__ == '__main__':
         for aresult in one_to_max(elms):
             print(aresult)
 
+    if args.zero_to_max:
+        for aresult in zero_to_max(elms):
+            print(aresult)
+
     if args.one_less:
         for aresult in one_less(elms):
             print(aresult)
@@ -66,6 +72,8 @@ if __name__ == '__main__':
 # ./test_iterutil.py --sequence-counts --elms "(0,1,2,3,3,3,0,0)"
 
 # ./test_iterutil.py --one-to-max --elms "((0,3), (1,2))"
+
+# ./test_iterutil.py --zero-to-max --elms "((0,3), (1,2))"
 
 # ./test_iterutil.py --one-less --elms "((0, 3), (1, 2), (2, 2))"
 
