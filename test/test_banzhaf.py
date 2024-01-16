@@ -4,6 +4,9 @@ sys.path.append('../src')
 
 from game_theory_utils.coalitions.banzhaf import Banzhaf
 
+from game_theory_utils.coalitions.coalition import CoalitionalGame, create_voting_game
+from game_theory_utils.util.convertutil import tuple_from_dict
+
 def un_security_old(player_counts):
     """According to "old" security council rules for a ruling to pass it needs supprt of all
        5 permanent 'P' members and 2 temporary '2' Members.
@@ -46,6 +49,8 @@ if __name__ == '__main__':
         banzhaf.set_voting_powers(player_types=player_types, type_strength=strengths)
         banzhaf.compute_banzhaf_values()
         print('computed values',  banzhaf.get_banzhaf_values())
+        cg = create_voting_game(player_types=player_types, type_strengths=strengths, crit=5)
+        print('computed values',  cg.get_banzhaf_values())
 
     if args.un:
         player_types = {'P':5, 'T':6}

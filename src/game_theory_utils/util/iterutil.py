@@ -105,7 +105,7 @@ def _one_to_max_next(counts, pos):
         pos[iii] = 1
     return pos
 
-def one_less(coal):
+def one_less(coal, remove_zeros=False):
     """Given a types count tuple/list, yield a a pair:
         a tuple with one less of each member,
         the element removed"""
@@ -114,7 +114,7 @@ def one_less(coal):
         coal2 = deepcopy(coal)
         if elm[1] == 0:
             continue
-        if elm[1] == 1:
+        if elm[1] == 1 and remove_zeros:
             del coal2[ii]
         else:
             coal2[ii][1] -= 1

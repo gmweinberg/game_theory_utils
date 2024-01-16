@@ -3,6 +3,7 @@ import sys
 sys.path.append('../src')
 
 from game_theory_utils.coalitions.shapley import Shapley
+from game_theory_utils.coalitions.coalitions  import ConditionalGame
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
