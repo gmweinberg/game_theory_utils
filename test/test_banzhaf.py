@@ -3,6 +3,7 @@ import sys
 sys.path.append('../src')
 
 from game_theory_utils.coalitions.banzhaf import Banzhaf
+from game_theory_utils.coalition.banzhaf import *
 
 from game_theory_utils.coalitions.coalition import CoalitionalGame, create_voting_game
 from game_theory_utils.util.convertutil import tuple_from_dict
@@ -57,7 +58,9 @@ if __name__ == '__main__':
         banzhaf.set_player_types(player_types)
         banzhaf.set_coalition_valuation(un_security_old)
         banzhaf.compute_banzhaf_values()
-        print('computed values',  banzhaf.get_banzhaf_values())
+        print('computed values bz',  banzhaf.get_banzhaf_values())
+        cg0 = CoalitionalGame(player_types, un_security_old)
+        print('computed values cg0',  cg0.get_banzhaf_values())
 
     if args.vals:
         vals = literal_eval(args.vals)

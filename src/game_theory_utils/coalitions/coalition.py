@@ -5,6 +5,9 @@ from math import comb, prod
 from game_theory_utils.util.convertutil import tuple_from_dict, get_type_count
 from game_theory_utils.util.iterutil import zero_to_max, one_less, fill_vals
 
+__all__ = ('CoalitionalGame', 'create_voting_game', 'create_game_from_unique_players',
+           'create_game_from_typed_players')
+
 class CoalitionalGame:
     """A coalitional game is defined as a set of players and a function giving the value of each subset of
       members, cakked a coalition. In this implementation I support the notion of player "types":
