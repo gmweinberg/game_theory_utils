@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 from collections import defaultdict
 from math import comb, prod
+import random
 
-from game_theory_utils.util.convertutil import tuple_from_dict, get_type_count
-from game_theory_utils.util.iterutil import zero_to_max, one_less, fill_vals
+from game_theory_utils.util.convertutil import (tuple_from_dict, get_type_count, insert_zeros)
+from game_theory_utils.util.iterutil import (zero_to_max, one_less, fill_vals, sequence_from_types,
+                                             distinct_permutations, sequence_counts)
 
 __all__ = ('CoalitionalGame', 'create_voting_game', 'create_game_from_unique_players',
            'create_game_from_typed_players')
@@ -23,6 +25,7 @@ class CoalitionalGame:
     def __init__(self, player_types, coalition_valuation):
         self.player_types = player_types #
         self.coalition_valuation = coalition_valuation # function
+        self.verbose = False
         
         self.shapley_values = None
         self.banzhaf_values = None
@@ -55,6 +58,54 @@ class CoalitionalGame:
         for type_ in bcounts:
             self.banzhaf_values[type_] = bcounts[type_] / (total * self.player_types[type_])
 
+    def get_shapley_values(self):
+        """Get the shapley values. Calculate them if they have not yet been calculated."""
+        if self.shapley_values is None:
+            self.calculate_shapley_values()
+        return self.shapley_values
+
+    def calculate_shapley_values(self):
+        """Compute the shapley values and store them as members."""
+        keys = [key for key in self.player_types]
+        shapley = defaultdict(float)
+        perms = 0.0
+        for combo in distinct_permutations(self.player_types):
+            oldval = 0
+            perms += 1.0
+            for ii, player in enumerate(combo):
+                counts = sequence_counts(combo[0:ii + 1])
+                counts_tuple = insert_zeros(tuple_from_dict(counts), keys)
+                newval = self.coalition_valuation(counts_tuple)
+                if self.verbose:
+                    print('counts', counts, 'counts_tuple', counts_tuple, 'ii', ii, 'newval', newval, 'oldval', oldval)
+                shapley[player] += newval - oldval
+                oldval = newval
+        for player in shapley.keys():
+            shapley[player] = shapley[player]/(perms * self.player_types[player])
+        self.shapley_values = dict(shapley)
+
+    def simulate_shapley_values(self, perms):
+        """Get approximate shapley values by looking at random permutations.
+           Returns te approximate values, does not update the shapley_values member."""
+        keys = [key for key in self.player_types]
+        shapley = defaultdict(float)
+        combo = sequence_from_types(self.player_types)
+        for jj in range(perms):
+            random.shuffle(combo)
+            for ii, player in enumerate(combo):
+                if ii == 0:
+                    oldval = 0
+                counts = sequence_counts(combo[0:ii + 1])
+                counts_tuple = insert_zeros(tuple_from_dict(counts), keys)
+                newval = self.coalition_valuation(counts_tuple)
+                shapley[player] += newval - oldval
+                oldval = newval
+        for player in shapley.keys():
+            shapley[player] = shapley[player]/(perms * self.player_types[player])
+
+        return dict(shapley)
+
+
 def create_voting_game(player_types, type_strengths, crit):
     """Create a colatitional game from a player strengths tuple and  a tupe_stengs dict.
        Returnthe game.
@@ -72,30 +123,35 @@ def create_game_from_unique_players(vals):
         For any values not given fill in values from the highest values of any 
         sub-coalitions given. The empty set coalition has a value of zero. The fill in logic only makes sense
         for profit games."""
-    player_types = set()
+    pts = set()
     for key in vals:
-        player_types.add(key)
-    player_types = {pt:1 for pt in player_types}
+        for elm in key:
+            pts.add(elm)
+    player_types = {pt:1 for pt in pts}
     # given will be (player types): value because types are unique. We will make a new dict
     # with the ones added
     vals2 = {}
     for key in vals:
-        key2 = tuple([(elm, 0) for elm in keys])
+        key2 = tuple([(elm, 1) for elm in key])
+        key2 = insert_zeros(key2, pts)
         vals2[key2] = vals[key]
-    fill_vals(vals2, player_types)
-    fun = lambda type_counts: vals[type_counts]
-    theGame = ColitionalGame(player_types=player_types, coalition_valuation=fun)
+    ptt = tuple_from_dict(player_types)
+    fill_vals(vals2, ptt)
+    fun = lambda type_counts: vals2[type_counts]
+    theGame = CoalitionalGame(player_types=player_types, coalition_valuation=fun)
     return theGame
 
-def create_game_from_typed_players(player_types, vals):
+def create_game_from_typed_players(player_types, coalition_values):
     """Create a game from a player_types structure and a dict where keys give the coalition type counts
-       and the values are values fo the coalition. Fill in any missing values with the highest value fo any
+       and the values are values for the coalition. Fill in any missing values with the highest value fo any
         For any valus not given fill in values from the highest values of any 
         sub-coalitions given. The empty set coalition has a value of zero. The fill in logic only makes sense
         for profit games."""
 
     keys = [key for key in player_types]
-    fill_vals(vals, player_types)
-    fun = lambda type_counts: vals[type_counts]
-    theGame = ColitionalGame(player_types=player_types, coalition_valuation=fun)
+    ptt = tuple_from_dict(player_types)
+    vals2 = {insert_zeros(key, keys):coalition_values[key] for key in coalition_values}
+    fill_vals(vals2, ptt)
+    fun = lambda type_counts: vals2[type_counts]
+    theGame = CoalitionalGame(player_types=player_types, coalition_valuation=fun)
     return theGame

@@ -41,6 +41,3 @@ def get_type_count(counts_tuple, type_):
         if elm[0] == type_:
             return elm[1]
     return 0
-
-
-

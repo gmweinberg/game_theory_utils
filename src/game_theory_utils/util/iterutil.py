@@ -118,13 +118,15 @@ def one_less(coal, remove_zeros=False):
             del coal2[ii]
         else:
             coal2[ii][1] -= 1
-        yield (tuple([(elm[0], elm[1]) for elm in coal2 if elm[1]]), coal[ii][0])
+        yield (tuple([(elm[0], elm[1]) for elm in coal2]), coal[ii][0])
 
 def fill_vals(vals, player_types):
     """Vals is a dictionary where the key is a player_types tuple and the value is
-       the value of the coalition represented by the tuple. Updates vals in place"""
+       the value of the coalition represented by the tuple.
+       Player_types is a tuple.
+       Updates vals in place"""
 
-    zeros = tuple([(type_, 0) for type_ in player_types])
+    zeros = tuple([(type_[0], 0) for type_ in player_types])
     vals[zeros] = 0
     for combo in zero_to_max(player_types):
         if combo not in vals:

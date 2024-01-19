@@ -3,7 +3,7 @@ import sys
 sys.path.append('../src')
 
 from game_theory_utils.coalitions.shapley import Shapley
-from game_theory_utils.coalitions.coalitions  import ConditionalGame
+from game_theory_utils.coalitions.coalition import *
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
@@ -33,18 +33,29 @@ if __name__ == '__main__':
         shapley.set_voting_powers(player_types=player_types, type_strength=strengths)
         shapley.compute_shapley_values()
         print('computed values',  shapley.get_shapley_values())
-        shapley.simulate_shapley_values(100000)
-        print('simulated values',  shapley.get_shapley_values())
+        # shapley.simulate_shapley_values(100000)
+        # print('simulated values',  shapley.get_shapley_values())
+        cg = create_voting_game(player_types=player_types, type_strengths=strengths, crit=5)
+        if args.verbose:
+            cg.verbose = True
+        print('cg values', cg.get_shapley_values())
+        print('cg values simulated', cg.simulate_shapley_values(10000))
 
     if args.ungrouped:
-        shapley.set_ungrouped_coalition_values(vals)
-        shapley.compute_shapley_values()
-        print('computed values',  shapley.get_shapley_values())
+        #shapley.set_ungrouped_coalition_values(vals)
+        #shapley.compute_shapley_values()
+        #print('computed values',  shapley.get_shapley_values())
+        cg = create_game_from_unique_players(vals)
+        if args.verbose:
+            cg.verbose = True
+        print('cg computed values',  cg.get_shapley_values())
 
     if args.grouped:
         shapley.set_grouped_coalition_values(coalition_values = vals, player_types=player_types)
         shapley.compute_shapley_values()
         print('computed values',  shapley.get_shapley_values())
+        cg = create_game_from_typed_players(coalition_values=vals, player_types=player_types)
+        print('cg computed values',  cg.get_shapley_values())
 
 # Simulated vals should be almost the same as computed vals as long as number of iterations is large.
 # Computed vals computed different ways must give the same answer

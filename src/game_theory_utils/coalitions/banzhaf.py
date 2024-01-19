@@ -52,8 +52,7 @@ class Banzhaf:
             vals = coalition_values
         else:
             vals = {tuple2(key):1 for key in key in coalition_values}
-        pt = tuple_from_dict(player_types)
-        fill_vals(vals, player_types=pt)
+        fill_vals(vals, player_types=player_types)
         fun = lambda type_counts: vals[type_counts]
         self.set_coalition_valuation(fun)
 
