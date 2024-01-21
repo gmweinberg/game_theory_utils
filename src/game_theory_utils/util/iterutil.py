@@ -80,31 +80,6 @@ def zero_to_max(type_counts):
         yield aresult
 
 
-def one_to_max(counts):
-    """Given a list of tuples, generate tuples with the first element and one to max of the second
-       e.g one_to_max(((0,2), (1,3)) will yield 
-       ((0,1),(1,1)), ((0,1), (1,2)), ((0,1),(1,3)),
-       ((0,2),(1,1)), ((0,2), (2,2)), ((0,2), (2,3)) so six results."""
-    # I don't remember what I wanted this for.
-    pos = [1] * len(counts)
-    while pos:
-        yield tuple([(counts[iii][0], pos[iii]) for iii in range(len(counts))])
-        pos = _one_to_max_next(counts, pos)
-
-
-def _one_to_max_next(counts, pos):
-    """Helper function for one_to_max"""
-    lol = 'nope'
-    ii = 0
-    while ii < len(counts) and pos[ii] == counts[ii][1]:
-        ii += 1
-    if ii == len(counts): # we are done
-        return
-    pos[ii] += 1
-    for iii in range(ii):
-        pos[iii] = 1
-    return pos
-
 def one_less(coal, remove_zeros=False):
     """Given a types count tuple/list, yield a a pair:
         a tuple with one less of each member,

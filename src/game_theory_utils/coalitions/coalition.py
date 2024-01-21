@@ -3,7 +3,7 @@ from collections import defaultdict
 from math import comb, prod
 import random
 
-from game_theory_utils.util.convertutil import (tuple_from_dict, get_type_count, insert_zeros)
+from game_theory_utils.util.convertutil import (tuple_from_dict, list_from_dict, get_type_count, insert_zeros)
 from game_theory_utils.util.iterutil import (zero_to_max, one_less, fill_vals, sequence_from_types,
                                              distinct_permutations, sequence_counts)
 
@@ -26,12 +26,31 @@ class CoalitionalGame:
         self.player_types = player_types #
         self.coalition_valuation = coalition_valuation # function
         self.verbose = False
+
+        typed = False
+        for elm in player_types:
+            if player_types[elm] > 1:
+                typed = True
+                break
+        self.typed = typed
+
+        self.simple = None
+        self.superadditive = None
+        self.monotonic = None
         
         self.shapley_values = None
         self.banzhaf_values = None
 
     def core_exists(self):
         return False
+
+    def get_valuation(self):
+        """Return the valuation as a dictionary.
+        This may be prohibitivley large."""
+        valuation = {}
+        for key in zero_to_max(tuple_from_dict(self.player_types)):
+            valuation[key] = self.coalition_valuation(key)
+        return valuation
 
     def get_banzhaf_values(self):
         """Get the banzhaf values. Note that the banzhaf values do not exist unless the game is simple
@@ -104,6 +123,44 @@ class CoalitionalGame:
             shapley[player] = shapley[player]/(perms * self.player_types[player])
 
         return dict(shapley)
+
+    def zero_normalize(self):
+        """Create straegically equivalent 0 normalized game. A game is 0 normalized if
+           the colaition value is zero for all single-member coalitions. The value of the
+           grand coalition will be 1, 0, or -1. Returns the pai (game, v) where
+           v is the value of the grand coalition in the new game.
+        """
+        grand = self.coalition_valuation(tuple_from_dict(self.player_types))
+        keys = sorted([key for key in self.player_types])
+        offsets = {}
+        for ii in range(len(keys)):
+            ones = tuple([(keys[iii], 1) if iii == ii else (keys[iii], 0) for iii in range(len(keys))])
+            offsets[ii] = self.coalition_valuation(ones)
+        offtotal = sum([offsets[key] * self.player_types[key] for key in keys])
+        if offtotal < grand:
+            newgrand = 1
+            scale = 1 / (grand - offtotal)
+        elif offtotal > grand:
+            newgrand = -1
+            scale = 1 / (offtotal - grand)
+        else:
+            newgrand = 0
+            scale = 1 # anz nonzero value should work
+        vals = {}
+        for atuple in zero_to_max(tuple_from_dict(self.player_types)):
+            old = self.coalition_valuation(atuple)
+            off = sum([offsets[elm[0]] * elm[1] for elm in atuple])
+            vals[atuple] = (old - off) * scale
+        fun = lambda type_counts: vals[type_counts]
+        theGame = CoalitionalGame(player_types=self.player_types, coalition_valuation=fun)
+        return theGame, newgrand
+
+    def get_is_simple(self):
+        """For a "simple" coalitional game all valuations are 1 or 0"""
+        for key in zero_to_max(tuple_from_dict(self.player_types)):
+            if self.coalition_valuation(key) not in (1,0):
+                return False
+        return True
 
 
 def create_voting_game(player_types, type_strengths, crit):

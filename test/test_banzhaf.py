@@ -5,7 +5,6 @@ sys.path.append('../src')
 from game_theory_utils.coalitions.banzhaf import Banzhaf
 from game_theory_utils.coalitions.coalition import *
 
-from game_theory_utils.coalitions.coalition import CoalitionalGame, create_voting_game
 from game_theory_utils.util.convertutil import tuple_from_dict
 
 def un_security_old(player_counts):
@@ -61,6 +60,7 @@ if __name__ == '__main__':
         print('computed values bz',  banzhaf.get_banzhaf_values())
         cg0 = CoalitionalGame(player_types, un_security_old)
         print('computed values cg0',  cg0.get_banzhaf_values())
+        print('valuation', cg0.get_valuation())
 
     if args.vals:
         vals = literal_eval(args.vals)
@@ -79,3 +79,5 @@ if __name__ == '__main__':
 
 # Un security council old, 5 permanent and 6 temporary members Maschler 813
 # ./test_banzhaf.py --types "{'P':5, 'T':6}" --vals "{(('P',5),('T',2)):1}"
+
+# ./test_banzhaf.py --un

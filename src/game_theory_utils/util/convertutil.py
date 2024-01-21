@@ -7,11 +7,16 @@
    tuples when I want to use it as dictionary keys.
    For the tuple I may or may not want to include an element for zero of a type."""
 
-__all__ = ('tuple_from_dict', 'dict_from_tuple', 'list2', 'tuple2', 'insert_zeros', 'remove_zeros', 'get_type_count')
+__all__ = ('tuple_from_dict', 'dict_from_tuple', 'list_from_dict', 'list2', 'tuple2',
+           'insert_zeros', 'remove_zeros', 'get_type_count')
 
 def tuple_from_dict(dict):
     """Create a tuple of tuples from a dictionary"""
     return tuple(sorted([(elm, dict[elm]) for elm in dict], key=lambda x: x[0]))
+
+def list_from_dict(dict):
+    """Create a list of lists from a dictionary"""
+    return (sorted([[elm, dict[elm]] for elm in dict], key=lambda x: x[0]))
 
 def dict_from_tuple(atuple):
     """Create a tuple of tuples from a dictionary"""
