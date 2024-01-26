@@ -6,7 +6,7 @@ from copy import deepcopy
 from itertools import chain, combinations, permutations, repeat, product
 
 __all__ = ['powerset', 'distinct_permutations', 'sequence_counts', 'sequence_from_types',
-           'subtype_coalitions', 'one_to_max', 'one_less', 'zero_to_max']
+           'subtype_coalitions', 'one_less', 'zero_to_max']
 
 def powerset(iterable):
     """From itertools documentation"""
@@ -64,7 +64,7 @@ def subtype_coalitions(type_counts):
     for n in range(1, len(keys) + 1):
         for combo in combinations(keys, n):
             mytuple = tuple([(pt, type_counts[pt]) for pt in combo])
-            for coal in one_to_max(mytuple):
+            for coal in zero_to_max(mytuple):
                 yield coal
 
 

@@ -160,6 +160,6 @@ cython_debug/
 #.idea/
 
 # vi tmp files
-*.swp
+.*.swp
 # crap
 crap

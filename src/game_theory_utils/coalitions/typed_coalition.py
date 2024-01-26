@@ -7,12 +7,12 @@ from game_theory_utils.util.convertutil import (tuple_from_dict, list_from_dict,
 from game_theory_utils.util.iterutil import (zero_to_max, one_less, fill_vals, sequence_from_types,
                                              distinct_permutations, sequence_counts)
 
-__all__ = ('CoalitionalGame', 'create_voting_game', 'create_game_from_unique_players',
-           'create_game_from_typed_players')
+__all__ = ('TypedCoalitionalGame', 'create_typed_voting_game',
+           'create_typed_game')
 
-class CoalitionalGame:
-    """A coalitional game is defined as a set of players and a function giving the value of each subset of
-      members, cakked a coalition. In this implementation I support the notion of player "types":
+class TypedCoalitionalGame:
+    """A TypedCoalitionalGame has a dictionary called player_types which gives the count of each  a set of players and a function giving the value of each subset of
+      members, called a coalition. In this implementation I support the notion of player "types":
       the value of a coalition depends on the number of types of each player.
       If all players are unique, there is just one player of each type.
       I represent the player types as a dict e.g. {'a': 3, 'b', 4 } means there are 3 players of type a and
@@ -28,22 +28,12 @@ class CoalitionalGame:
         self.isCost = isCost
         self.verbose = False
 
-        typed = False
-        for elm in player_types:
-            if player_types[elm] > 1:
-                typed = True
-                break
-        self.typed = typed
-
         self.simple = None
         self.superadditive = None
         self.monotonic = None
         
         self.shapley_values = None
         self.banzhaf_values = None
-
-    def core_exists(self):
-        return False
 
     def get_valuation(self):
         """Return the valuation as a dictionary.
@@ -198,42 +188,18 @@ class CoalitionalGame:
         return True
 
 
-def create_voting_game(player_types, type_strengths, crit):
+def create_typed_voting_game(player_types, type_strengths, crit):
     """Create a colatitional game from a player strengths tuple and  a tupe_stengs dict.
        Returnthe game.
        A weighted majority voting game has a value of 1 if the sum of player strengths * number of players
        voting for the measure exceeds a critical value."""
     strength = lambda player_counts: sum([type_strengths[pc[0]] * pc[1] for pc in player_counts])
     fun = lambda player_counts: int(strength(player_counts) >= crit)
-    theGame = CoalitionalGame(player_types=player_types, coalition_valuation=fun)
+    theGame = TypedCoalitionalGame(player_types=player_types, coalition_valuation=fun)
     return theGame
 
-def create_game_from_unique_players(vals):
-    """Create a coalitional game from a valuation dict where the key is (sorted) player labels in the
-        coalition. Because the players are unique (one of each type) we do not need a player_types
-        tuple, we can derive it. 
-        For any values not given fill in values from the highest values of any 
-        sub-coalitions given. The empty set coalition has a value of zero. The fill in logic only makes sense
-        for profit games."""
-    pts = set()
-    for key in vals:
-        for elm in key:
-            pts.add(elm)
-    player_types = {pt:1 for pt in pts}
-    # given will be (player types): value because types are unique. We will make a new dict
-    # with the ones added
-    vals2 = {}
-    for key in vals:
-        key2 = tuple([(elm, 1) for elm in key])
-        key2 = insert_zeros(key2, pts)
-        vals2[key2] = vals[key]
-    ptt = tuple_from_dict(player_types)
-    fill_vals(vals2, ptt)
-    fun = lambda type_counts: vals2[type_counts]
-    theGame = CoalitionalGame(player_types=player_types, coalition_valuation=fun)
-    return theGame
 
-def create_game_from_typed_players(player_types, coalition_values):
+def create_typed_game(player_types, coalition_values):
     """Create a game from a player_types structure and a dict where keys give the coalition type counts
        and the values are values for the coalition. Fill in any missing values with the highest value fo any
         For any valus not given fill in values from the highest values of any 
@@ -245,5 +211,5 @@ def create_game_from_typed_players(player_types, coalition_values):
     vals2 = {insert_zeros(key, keys):coalition_values[key] for key in coalition_values}
     fill_vals(vals2, ptt)
     fun = lambda type_counts: vals2[type_counts]
-    theGame = CoalitionalGame(player_types=player_types, coalition_valuation=fun)
+    theGame = TypedCoalitionalGame(player_types=player_types, coalition_valuation=fun)
     return theGame
