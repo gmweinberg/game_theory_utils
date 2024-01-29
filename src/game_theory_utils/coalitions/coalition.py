@@ -3,126 +3,105 @@ from collections import defaultdict
 from math import comb, prod
 import random
 
+from itertools import permutations
+
 from game_theory_utils.util.convertutil import (tuple_from_dict, list_from_dict, get_type_count, insert_zeros)
-from game_theory_utils.util.iterutil import (zero_to_max, one_less, fill_vals, sequence_from_types,
+from game_theory_utils.util.iterutil import (powerset, froze_remove_one, sequence_from_types,
                                              distinct_permutations, sequence_counts)
 
-__all__ = ('CoalitionalGame', 'create_voting_game', 'create_game_from_unique_players',
-           'create_game_from_typed_players')
+__all__ = ('CoalitionalGame', 'create_voting_game')
 
 class CoalitionalGame:
     """A coalitional game is defined as a set of players and a function giving the value of each subset of
-      members, cakked a coalition. In this implementation I support the notion of player "types":
-      the value of a coalition depends on the number of types of each player.
-      If all players are unique, there is just one player of each type.
-      I represent the player types as a dict e.g. {'a': 3, 'b', 4 } means there are 3 players of type a and
-      4 of type b.
-      The coalition valuation function takes a coalition tuple as an input. Internally it will
-      usually just be a dictionary lookup with the coalition tupe as a key. The keys must be sorted since
-      (('a',3), ('b',4)) and (('b', 4), ('a',3)) are not the same.
+      members, called a coalition.
     """
 
-    def __init__(self, player_types, coalition_valuation, isCost=False):
-        self.player_types = player_types #
-        self.coalition_valuation = coalition_valuation # function
+    def __init__(self, coalition_values, isCost=False):
+        self.players = set()
+        self.coalition_values = {} # key = frozenset players, val = coalition value
         self.isCost = isCost
         self.verbose = False
 
-        typed = False
-        for elm in player_types:
-            if player_types[elm] > 1:
-                typed = True
-                break
-        self.typed = typed
+        for key in coalition_values:
+            for elm in key:
+                self.players.add(elm)
+            self.coalition_values[frozenset(key)] = coalition_values[key]
+        self.fill_coalition_values()
 
-        self.simple = None
-        self.superadditive = None
-        self.monotonic = None
         
-        self.shapley_values = None
-        self.banzhaf_values = None
+    def fill_coalition_values(self):
+        """If self.coalition_values dict is mssing values, fill them in by assigning the highest value
+           of any subset that has a value."""
+        for elm in powerset(self.players):
+            elm = frozenset(elm)
+            if elm not in self.coalition_values:
+                if not elm:
+                    self.coalition_values[elm] = 0 # empty coalition has zero value
+                    continue
+                max_ = None
+                for less, removed in froze_remove_one(elm):
+                    if max_ is None or self.coalition_values[less] > max_:
+                        max_ = self.coalition_values[less]
+                self.coalition_values[elm] = max_
 
     def core_exists(self):
         return False
 
-    def get_valuation(self):
-        """Return the valuation as a dictionary.
-        This may be prohibitivley large."""
-        valuation = {}
-        for key in zero_to_max(tuple_from_dict(self.player_types)):
-            valuation[key] = self.coalition_valuation(key)
-        return valuation
+
 
     def get_banzhaf_values(self):
-        """Get the banzhaf values. Note that the banzhaf values do not exist unless the game is simple
-           (all coalition values are one or zero."""
-        if self.banzhaf_values is None:
-            self.calculate_banzhaf_values()
-        return self.banzhaf_values
-
-    def calculate_banzhaf_values(self):
-        """Calculate the banzhaf values. Just changes internal members."""
+        """Get the banzhaf values. Note the banzhaf values are only defined for simple games (games where
+           all coalitions are values zero or 1."""
         bcounts = defaultdict(int) # key is player type, val is number of distinct coalitions
                                    # where adding one of pt earns success
-        for atuple in zero_to_max(tuple_from_dict(self.player_types)):
-            if self.coalition_valuation(atuple):
-                for less, removed in one_less(atuple):
-                    if not self.coalition_valuation(less):
-                        mult = prod([comb(self.player_types[elm[0]], elm[1]) for elm in less])
-                        mult *= (self.player_types[removed] - get_type_count(less, removed))
-                        # print(atuple, removed, less, mult)
+        for elm in powerset(self.players):
+            elm = frozenset(elm)
+            if self.coalition_values[elm]:
+                for less, removed in froze_remove_one(elm):
+                    if not self.coalition_values[less]:
+                        bcounts[removed] += 1
+        total = sum([bcounts[player] for player in bcounts])
+        banzhaf_values = {pt:0 for pt in self.players} # in case bcount is zero
+        for player in bcounts:
+            banzhaf_values[player] = bcounts[player] / total
+        return banzhaf_values
 
-                        bcounts[removed] += mult
-        total = sum([bcounts[pt] for pt in bcounts])
-        self.banzhaf_values = {pt:0 for pt in self.player_types} # in case bcount is zero
-        for type_ in bcounts:
-            self.banzhaf_values[type_] = bcounts[type_] / (total * self.player_types[type_])
 
     def get_shapley_values(self):
-        """Get the shapley values. Calculate them if they have not yet been calculated."""
-        if self.shapley_values is None:
-            self.calculate_shapley_values()
-        return self.shapley_values
-
-    def calculate_shapley_values(self):
-        """Compute the shapley values and store them as members."""
-        keys = [key for key in self.player_types]
+        """Calculate and retur the shapley values"""
         shapley = defaultdict(float)
-        perms = 0.0
-        for combo in distinct_permutations(self.player_types):
-            oldval = 0
-            perms += 1.0
-            for ii, player in enumerate(combo):
-                counts = sequence_counts(combo[0:ii + 1])
-                counts_tuple = insert_zeros(tuple_from_dict(counts), keys)
-                newval = self.coalition_valuation(counts_tuple)
-                if self.verbose:
-                    print('counts', counts, 'counts_tuple', counts_tuple, 'ii', ii, 'newval', newval, 'oldval', oldval)
-                shapley[player] += newval - oldval
-                oldval = newval
+        perms = 0
+        for perm in permutations(self.players):
+            old = 0
+            perms += 1
+            for ii in range(len(perm)):
+                piece = frozenset(perm[:ii + 1])
+                new = self.coalition_values[piece]
+                player = perm[ii]
+                shapley[player] += new - old
+                old = new
+
         for player in shapley.keys():
-            shapley[player] = shapley[player]/(perms * self.player_types[player])
-        self.shapley_values = dict(shapley)
+            shapley[player] = shapley[player]/perms
+        return dict(shapley)
 
     def simulate_shapley_values(self, perms):
         """Get approximate shapley values by looking at random permutations.
-           Returns te approximate values, does not update the shapley_values member."""
-        keys = [key for key in self.player_types]
+           Returns the approximate values."""
+        combo = [player for player in self.players]
         shapley = defaultdict(float)
-        combo = sequence_from_types(self.player_types)
         for jj in range(perms):
+            old = 0
             random.shuffle(combo)
-            for ii, player in enumerate(combo):
-                if ii == 0:
-                    oldval = 0
-                counts = sequence_counts(combo[0:ii + 1])
-                counts_tuple = insert_zeros(tuple_from_dict(counts), keys)
-                newval = self.coalition_valuation(counts_tuple)
-                shapley[player] += newval - oldval
-                oldval = newval
-        for player in shapley.keys():
-            shapley[player] = shapley[player]/(perms * self.player_types[player])
+            for ii in range(len(combo)):
+                piece = frozenset(combo[:ii + 1])
+                new = self.coalition_values[piece]
+                player = combo[ii]
+                shapley[player] += new - old
+                old = new
 
+        for player in shapley.keys():
+            shapley[player] = shapley[player]/perms
         return dict(shapley)
 
     def zero_normalize(self):
@@ -131,13 +110,8 @@ class CoalitionalGame:
            grand coalition will be 1, 0, or -1. Returns the pai (game, v) where
            v is the value of the grand coalition in the new game.
         """
-        grand = self.coalition_valuation(tuple_from_dict(self.player_types))
-        keys = sorted([key for key in self.player_types])
-        offsets = {}
-        for ii in range(len(keys)):
-            ones = tuple([(keys[iii], 1) if iii == ii else (keys[iii], 0) for iii in range(len(keys))])
-            offsets[ii] = self.coalition_valuation(ones)
-        offtotal = sum([offsets[key] * self.player_types[key] for key in keys])
+        grand = self.coalition_values[frozenset(self.players)]
+        offtotal = sum([self.coalition_values[frozenset([player])] for player in self.players])
         if offtotal < grand:
             newgrand = 1
             scale = 1 / (grand - offtotal)
@@ -148,12 +122,12 @@ class CoalitionalGame:
             newgrand = 0
             scale = 1 # anz nonzero value should work
         vals = {}
-        for atuple in zero_to_max(tuple_from_dict(self.player_types)):
-            old = self.coalition_valuation(atuple)
-            off = sum([offsets[elm[0]] * elm[1] for elm in atuple])
-            vals[atuple] = (old - off) * scale
-        fun = lambda type_counts: vals[type_counts]
-        theGame = CoalitionalGame(player_types=self.player_types, coalition_valuation=fun)
+        for elm in powerset(self.players):
+            elm = frozenset(elm)
+            old = self.coalition_values[elm]
+            off = sum([self.coalition_values[frozenset([player])] for player in elm])
+            vals[elm] = (old - off) * scale
+        theGame = CoalitionalGame(vals)
         return theGame, newgrand
 
     def is_equivalent(self, game):
@@ -168,82 +142,50 @@ class CoalitionalGame:
 
     def get_is_monotonic(self):
         """A game is monotonics if the value of a coalition is ≥ the value of its subcoalitions."""
-        for atuple in zero_to_max(tuple_from_dict(self.player_types)):
-            bigger = self.coalition_valuation(atuple)
-            for less, removed in one_less(atuple):
-                if self.coalition_valuation(less) > bigger:
+        for elm in powerset(self.players):
+            elm = frozenset(elm)
+            old = self.coalition_values[elm]
+            for less, removed in froze_remove_one(elm):
+                if self.coalition_values[less] > old:
                     return False
         return True
 
     def get_is_superadditive(self):
-        for atuple in zero_to_max(tuple_from_dict(self.player_types)):
-            val = self.coalition_valuation(atuple)
-            djm = tuple([(elm[0], self.player_types[elm[0]] - elm[1]) for elm in atuple])
-            for adisjoint in zero_to_max(djm):
-                theUnion = tuple([(atuple[ii][0], atuple[ii][1] + adisjoint[ii][1]) for ii in range(len(atuple))])
-                if self.isCost:
-                    if self.coalition_valuation(theUnion) > self.coalition_valuation(adisjoint) + val:
-                        return False
-                else:
-                    if self.coalition_valuation(theUnion) < self.coalition_valuation(adisjoint) + val:
-                        return False
+        """A game is superadditive if for every pair of disjoint coaalitions, the valuation of the union
+           is  ≥ the sum of the values of the pair."""
+        # this can take a really long time to check
+        for elm in powerset(self.players):
+            elm = frozenset(elm)
+            complement = self.players - elm
+            for disjointelm in powerset(complement):
+                disjointelm = set(disjointelm)
+                sum_ = self.coalition_values[frozenset(disjointelm)] + self.coalition_values[elm]
+                if sum_ > self.coalition_values[frozenset(elm | disjointelm)]:
+                    return False
         return True
 
 
     def get_is_simple(self):
         """For a "simple" coalitional game all valuations are 1 or 0"""
-        for key in zero_to_max(tuple_from_dict(self.player_types)):
-            if self.coalition_valuation(key) not in (1,0):
+        for val in self.coalition_values.values():
+            if val not in (1,0):
                 return False
         return True
 
 
-def create_voting_game(player_types, type_strengths, crit):
-    """Create a colatitional game from a player strengths tuple and  a tupe_stengs dict.
-       Returnthe game.
+def create_voting_game(player_strengths, crit):
+    """Create a colatitional game from a player strengths dict.
+       Return the game.
        A weighted majority voting game has a value of 1 if the sum of player strengths * number of players
        voting for the measure exceeds a critical value."""
-    strength = lambda player_counts: sum([type_strengths[pc[0]] * pc[1] for pc in player_counts])
-    fun = lambda player_counts: int(strength(player_counts) >= crit)
-    theGame = CoalitionalGame(player_types=player_types, coalition_valuation=fun)
+    players = set([player for player in player_strengths])
+    coalition_values = {}
+    for elm in powerset(players):
+        key = frozenset(elm)
+        strength = sum([player_strengths[player] for player in elm])
+        val = int(strength >= crit)
+        coalition_values[key] = val
+
+    theGame = CoalitionalGame(coalition_values)
     return theGame
 
-def create_game_from_unique_players(vals):
-    """Create a coalitional game from a valuation dict where the key is (sorted) player labels in the
-        coalition. Because the players are unique (one of each type) we do not need a player_types
-        tuple, we can derive it. 
-        For any values not given fill in values from the highest values of any 
-        sub-coalitions given. The empty set coalition has a value of zero. The fill in logic only makes sense
-        for profit games."""
-    pts = set()
-    for key in vals:
-        for elm in key:
-            pts.add(elm)
-    player_types = {pt:1 for pt in pts}
-    # given will be (player types): value because types are unique. We will make a new dict
-    # with the ones added
-    vals2 = {}
-    for key in vals:
-        key2 = tuple([(elm, 1) for elm in key])
-        key2 = insert_zeros(key2, pts)
-        vals2[key2] = vals[key]
-    ptt = tuple_from_dict(player_types)
-    fill_vals(vals2, ptt)
-    fun = lambda type_counts: vals2[type_counts]
-    theGame = CoalitionalGame(player_types=player_types, coalition_valuation=fun)
-    return theGame
-
-def create_game_from_typed_players(player_types, coalition_values):
-    """Create a game from a player_types structure and a dict where keys give the coalition type counts
-       and the values are values for the coalition. Fill in any missing values with the highest value fo any
-        For any valus not given fill in values from the highest values of any 
-        sub-coalitions given. The empty set coalition has a value of zero. The fill in logic only makes sense
-        for profit games."""
-
-    keys = [key for key in player_types]
-    ptt = tuple_from_dict(player_types)
-    vals2 = {insert_zeros(key, keys):coalition_values[key] for key in coalition_values}
-    fill_vals(vals2, ptt)
-    fun = lambda type_counts: vals2[type_counts]
-    theGame = CoalitionalGame(player_types=player_types, coalition_valuation=fun)
-    return theGame

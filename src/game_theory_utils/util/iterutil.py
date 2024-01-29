@@ -5,7 +5,7 @@ from collections import defaultdict
 from copy import deepcopy
 from itertools import chain, combinations, permutations, repeat, product
 
-__all__ = ['powerset', 'distinct_permutations', 'sequence_counts', 'sequence_from_types',
+__all__ = ['powerset', 'froze_remove_one', 'distinct_permutations', 'sequence_counts', 'sequence_from_types',
            'subtype_coalitions', 'one_less', 'zero_to_max']
 
 def powerset(iterable):
@@ -13,6 +13,14 @@ def powerset(iterable):
     "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
     s = list(iterable)
     return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
+
+def froze_remove_one(iterable):
+    """Given an iterable, yield a frozenset with one element removed and the element removed."""
+    ml = list(iterable)
+    for ii in range(len(ml)):
+        l2 = list(ml)
+        removed = l2.pop(ii)
+        yield frozenset(l2), removed
 
 
 def distinct_permutations(counts):

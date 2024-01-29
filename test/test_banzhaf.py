@@ -65,9 +65,11 @@ if __name__ == '__main__':
 
     if args.vals:
         vals = literal_eval(args.vals)
-        banzhaf.set_coalition_values(vals, player_types)
-        banzhaf.compute_banzhaf_values()
-        print('computed values bz',  banzhaf.get_banzhaf_values())
+        #banzhaf.set_coalition_values(vals, player_types)
+        #banzhaf.compute_banzhaf_values()
+        #print('computed values bz',  banzhaf.get_banzhaf_values())
+        cg = create_typed_game(player_types=player_types, coalition_values = vals)
+        print(cg.get_banzhaf_values())
 
 
 
@@ -82,3 +84,6 @@ if __name__ == '__main__':
 # ./test_banzhaf.py --types "{'P':5, 'T':6}" --vals "{(('P',5),('T',2)):1}"
 
 # ./test_banzhaf.py --un
+
+# gloves
+#  ./test_banzhaf.py --types "{0:2, 1:1}", --vals "{((0,1), (1,1)):1}"
