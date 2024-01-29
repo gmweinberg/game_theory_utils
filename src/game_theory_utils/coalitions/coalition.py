@@ -44,9 +44,15 @@ class CoalitionalGame:
                         max_ = self.coalition_values[less]
                 self.coalition_values[elm] = max_
 
-    def core_exists(self):
-        return False
-
+    def is_core(self, imputation):
+        """The imputation is effectively a payoff assigned to each player. The imputation X is in the core
+           if for all coalitions S, x(S) ≥ v(S)"""
+        for elm in powerset(self.players):
+            elm = frozenset(elm)
+            x = sum([imputation[player] for player in elm])
+            if self.coalition_values[elm] > x:
+                return False
+        return True
 
 
     def get_banzhaf_values(self):
